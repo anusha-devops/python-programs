@@ -1,0 +1,1 @@
+ap123456|ABC|telemarket|/*|lambda|arn:aws:lambda:us-east-1:123xxxxxxxx:bb-board-lambda-dev-us-east-1|arn:aws:iam::123xxxxxxxx:role/ap123456-col-multistack-dev-us-east-1-iam-role|us-east-1
