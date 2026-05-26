@@ -6,7 +6,7 @@ on:
 
 jobs:
   review:
-    runs-on: self-hosted
+    runs-on: UKML2NVQXP9M
     permissions:
       id-token: write
       contents: read
