@@ -1,0 +1,63 @@
+name: OpenCode PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Redirect api.github.com to GHE
+        run: |
+          # Get the IP of your GHE instance
+          GHE_IP=$(dig +short github.dev.global.tesco.org | tail -1)
+          echo "GHE IP: $GHE_IP"
+          
+          # Redirect api.github.com → GHE
+          echo "$GHE_IP api.github.com" | sudo tee -a /etc/hosts
+          
+          # Verify
+          echo "=== /etc/hosts entry ==="
+          grep "api.github.com" /etc/hosts
+          
+          # Test redirect works
+          echo "=== Test redirect ==="
+          curl -sf -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token ${{ secrets.GHE_PAT_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY" || true
+
+      - uses: anomalyco/opencode/github@latest
+        env:
+          AZURE_API_KEY: ${{ secrets.OPENAI_KEY_5 }}
+          AZURE_RESOURCE_NAME: "qodo-gpt-5o-mini"
+          AZURE_API_VERSION: "2024-12-01-preview"
+          GITHUB_TOKEN: ${{ secrets.GHE_PAT_TOKEN }}
+          HTTPS_PROXY: "http://uk5.proxy.tesco.org:80"
+          NO_PROXY: "github.dev.global.tesco.org,api.github.com"
+        with:
+          model: azure/gpt-5
+          use_github_token: true
+          prompt: |
+            Review this pull request:
+            - Check for code quality issues
+            - Look for potential bugs
+            - Suggest improvements
+            - Check for security issues
+            - Check for missing tests
+
+      - name: Cleanup hosts file
+        if: always()
+        run: |
+          sudo sed -i '/api.github.com/d' /etc/hosts
