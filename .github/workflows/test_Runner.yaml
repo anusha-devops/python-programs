@@ -1,11 +1,32 @@
-name: Test Runner
+name: opencode-review
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
-  test:
-    runs-on: self-hosted
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      issues: read
     steps:
-      - name: Hello World
-        run: echo "Runner is working!"
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: anomalyco/opencode/github@latest
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.OPENAI_KEY_5 }}
+          AZURE_RESOURCE_NAME: "qodo-gpt-5o-mini"
+          AZURE_API_VERSION: "2024-12-01-preview"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: azure/gpt-5
+          use_github_token: true
+          prompt: |
+            Review this pull request:
+            - Check for code quality issues
+            - Look for potential bugs
+            - Suggest improvements
